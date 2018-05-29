@@ -134,13 +134,23 @@ NSString *const OWSContactsManagerSignalAccountsDidChangeNotification
     return self.systemContactsFetcher.supportsContactEditing;
 }
 
-#pragma mark SystemContactsFetcherDelegate
+#pragma mark - SystemContactsFetcherDelegate
 
 - (void)systemContactsFetcher:(SystemContactsFetcher *)systemsContactsFetcher
               updatedContacts:(NSArray<Contact *> *)contacts
                 isUserRequested:(BOOL)isUserRequested
 {
     [self updateWithContacts:contacts shouldClearStaleCache:isUserRequested];
+}
+
+- (void)systemContactsFetcher:(SystemContactsFetcher *)systemContactsFetcher
+       hasAuthorizationStatus:(enum ContactStoreAuthorizationStatus)authorizationStatus
+{
+    if (authorizationStatus == ContactStoreAuthorizationStatusRestricted
+        || authorizationStatus == ContactStoreAuthorizationStatusDenied) {
+        // Clear the contacts cache if access to the system contacts is revoked.
+        [self updateWithContacts:@[] shouldClearStaleCache:YES];
+    }
 }
 
 #pragma mark - Intersection
