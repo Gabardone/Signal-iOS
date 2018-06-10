@@ -675,6 +675,11 @@ typedef enum : NSUInteger {
     }
 }
 
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    NSLog(@"Whoa");
+}
+
+
 - (void)viewWillAppear:(BOOL)animated
 {
     DDLogDebug(@"%@ viewWillAppear", self.logTag);
@@ -1359,7 +1364,10 @@ typedef enum : NSUInteger {
             0,
             round(image.size.width + imageEdgeInsets.left + imageEdgeInsets.right),
             round(image.size.height + imageEdgeInsets.top + imageEdgeInsets.bottom));
-        [barButtons addObject:[[UIBarButtonItem alloc] initWithCustomView:callButton]];
+        UIBarButtonItem *callbutton = [[UIBarButtonItem alloc] initWithImage:image style:UIBarButtonItemStylePlain target:self action:@selector(startAudioCall)];
+        [callButton setAccessibilityLabel:NSLocalizedString(@"CALL_LABEL", "Accessibility label for placing call button")];
+        [barButtons addObject:callbutton];
+//        [barButtons addObject:[[UIBarButtonItem alloc] initWithCustomView:callButton]];
     }
 
     if (self.disappearingMessagesConfiguration.isEnabled) {
@@ -1378,11 +1386,36 @@ typedef enum : NSUInteger {
             timerView.frame = CGRectMake(0, 0, 36, 44);
         }
 
+        [timerView setAxis:UILayoutConstraintAxisVertical];
+
         [barButtons addObject:[[UIBarButtonItem alloc] initWithCustomView:timerView]];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_applicationDidChangeStatusBarOrientation:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
+    } else {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     }
 
-    self.navigationItem.rightBarButtonItems = [barButtons copy];
+    self.navigationItem.rightBarButtonItems = barButtons;
 }
+
+
+- (void)_applicationDidChangeStatusBarOrientation:(NSNotification *)notification {
+    if (self.navigationItem.rightBarButtonItems.count > 1) {
+        DisappearingTimerConfigurationView *timerView = [[[[self navigationItem] rightBarButtonItems] lastObject] customView];
+        //  We got a timer. Need to update its orientation. Need to use the deprecated method as the data in the userInfo isn't reliable when coming from unsupported upside down orientation.
+        switch ([[UIApplication sharedApplication] statusBarOrientation]) {
+            case UIInterfaceOrientationLandscapeRight:
+            case UIInterfaceOrientationLandscapeLeft:
+                [timerView setAxis:UILayoutConstraintAxisHorizontal];
+                break;
+
+            default:
+                [timerView setAxis:UILayoutConstraintAxisVertical];
+                break;
+        }
+    }
+}
+
 
 - (void)updateNavigationBarSubtitleLabel
 {

@@ -44,6 +44,7 @@ public class DisappearingTimerConfigurationView: UIView {
         Logger.verbose("\(logTag) in \(#function). Frame: \(oldFrame) -> \(self.frame)")
     }
 
+    private let stackView: UIStackView
     private let imageView: UIImageView
     private let label: UILabel
     private var pressGesture: UILongPressGestureRecognizer!
@@ -55,13 +56,19 @@ public class DisappearingTimerConfigurationView: UIView {
     @objc
     public init(durationSeconds: UInt32) {
         self.imageView = UIImageView(image: #imageLiteral(resourceName: "ic_timer"))
+        imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
+        imageView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
 
         self.label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
         label.text = NSString.formatDurationSeconds(durationSeconds, useShortFormat: true)
         label.font = UIFont.systemFont(ofSize: 10)
         label.textAlignment = .center
         label.minimumScaleFactor = 0.5
+
+        self.stackView = UIStackView(arrangedSubviews: [imageView, label])
+        stackView.axis = .vertical
 
         super.init(frame: CGRect.zero)
 
@@ -84,15 +91,21 @@ public class DisappearingTimerConfigurationView: UIView {
         let durationString = NSString.formatDurationSeconds(durationSeconds, useShortFormat: false)
         self.accessibilityHint = String(format: hintFormatString, durationString)
 
-        // Layout
-        self.addSubview(imageView)
-        self.addSubview(label)
-
+        //  Layout
         let kHorizontalPadding: CGFloat = 4
         let kVerticalPadding: CGFloat = 6
-        imageView.autoPinEdgesToSuperviewEdges(with: UIEdgeInsets(top: kVerticalPadding, left: kHorizontalPadding, bottom: 0, right: kHorizontalPadding), excludingEdge: .bottom)
-        label.autoPinEdgesToSuperviewEdges(with: UIEdgeInsets(top: 0, left: kHorizontalPadding, bottom: kVerticalPadding, right: kHorizontalPadding), excludingEdge: .top)
-        label.autoPinEdge(.top, to: .bottom, of: imageView)
+
+        self.addSubview(stackView)
+
+        stackView.autoPinEdgesToSuperviewEdges(with: UIEdgeInsets(top: kVerticalPadding, left: kHorizontalPadding, bottom: kVerticalPadding, right: kHorizontalPadding))
+
+        // Layout
+//        self.addSubview(imageView)
+//        self.addSubview(label)
+//
+//        imageView.autoPinEdgesToSuperviewEdges(with: UIEdgeInsets(top: kVerticalPadding, left: kHorizontalPadding, bottom: 0, right: kHorizontalPadding), excludingEdge: .bottom)
+//        label.autoPinEdgesToSuperviewEdges(with: UIEdgeInsets(top: 0, left: kHorizontalPadding, bottom: kVerticalPadding, right: kHorizontalPadding), excludingEdge: .top)
+//        label.autoPinEdge(.top, to: .bottom, of: imageView)
     }
 
     @objc
@@ -118,6 +131,16 @@ public class DisappearingTimerConfigurationView: UIView {
                 gestureRecognizer.isEnabled = false
                 gestureRecognizer.isEnabled = true
             }
+        }
+    }
+
+    @objc public var axis: UILayoutConstraintAxis {
+        get {
+            return stackView.axis
+        }
+
+        set {
+            stackView.axis = newValue
         }
     }
 
